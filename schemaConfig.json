@@ -1,0 +1,19 @@
+{
+    "tables": [
+        {
+            "name": "Users",
+            "fields": [
+                {
+                    "name": "username",
+                    "type": "VARCHAR(100)"
+                },
+                {
+                    "name": "passwordHash",
+                    "type": "VARCHAR(100)"
+                }
+            ]
+        }
+    ]
+}
+
+
