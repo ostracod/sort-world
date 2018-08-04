@@ -60,10 +60,23 @@ function tableExists(table, done) {
     );
 }
 
-function tableFieldExists(table, field, done) {
-    // TODO: Implement.
-    
-    done();
+function getTableFieldAttributes(table, field, done) {
+    connection.query(
+        "SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+        [databaseName, table.name, field.name],
+        function (error, results, fields) {
+            if (error) {
+                reportSqlError(error);
+                exitCleanly();
+                return;
+            }
+            if (results.length > 0) {
+                done(results[0]);
+            } else {
+                done(null);
+            }
+        }
+    );
 }
 
 function createDatabase(done) {
@@ -189,15 +202,62 @@ function setUpSchemaCommand() {
 }
 
 function verifyTableField(table, field, done) {
-    // TODO: Implement.
-    
-    done();
+    getTableFieldAttributes(table, field, function(fieldAttributes) {
+        var tempDescription = "Field \"" + field.name + "\" of table \"" + table.name + "\"";
+        if (fieldAttributes === null) {
+            console.log(tempDescription + " is missing.");
+            return;
+        }
+        var tempAttributesAreCorrect = true;
+        var tempType = fieldAttributes.COLUMN_TYPE.toLowerCase();
+        if (tempType.match(/int\([0-9]+\)/)) {
+            tempType = "int";
+        }
+        if (tempType != field.type.toLowerCase()) {
+            console.log(tempDescription + " has the wrong data type \"" + fieldAttributes.COLUMN_TYPE + "\". It should be \"" + field.type + "\".");
+            tempAttributesAreCorrect = false;
+        }
+        var tempIsPrimaryKey = (fieldAttributes.COLUMN_KEY.toUpperCase() == "PRI")
+        var tempShouldBePrimaryKey;
+        if ("primaryKey" in field) {
+            tempShouldBePrimaryKey = field.primaryKey;
+        } else {
+            tempShouldBePrimaryKey = false;
+        }
+        if (tempIsPrimaryKey != tempShouldBePrimaryKey) {
+            console.log(tempDescription + " has the wrong COLUMN_KEY value.");
+            tempAttributesAreCorrect = false;
+        }
+        var tempIsAutoIncrement = (fieldAttributes.EXTRA.toLowerCase() == "auto_increment")
+        var tempShouldBeAutoIncrement;
+        if ("primaryKey" in field) {
+            tempShouldBeAutoIncrement = field.primaryKey;
+        } else {
+            tempShouldBeAutoIncrement = false;
+        }
+        if (tempIsAutoIncrement != tempShouldBeAutoIncrement) {
+            console.log(tempDescription + " has the wrong EXTRA value.");
+            tempAttributesAreCorrect = false;
+        }
+        if (tempAttributesAreCorrect) {
+            console.log(tempDescription + " exists and has the correct attributes.");
+        }
+        done();
+    });
 }
 
 function verifyTableFields(table, done) {
-    // TODO: Implement.
-    
-    done();
+    var index = 0;
+    function verifyNextTableField() {
+        if (index >= table.fields.length) {
+            done();
+            return;
+        }
+        var tempField = table.fields[index];
+        index += 1;
+        verifyTableField(table, tempField, verifyNextTableField);
+    }
+    verifyNextTableField();
 }
 
 function verifyTable(table, done) {
