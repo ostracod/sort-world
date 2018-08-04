@@ -79,6 +79,49 @@ function getTableFieldAttributes(table, field, done) {
     );
 }
 
+function compareTableFieldAttributes(table, field, fieldAttributes) {
+    var outputMessageList = [];
+    var tempDescription = "Field \"" + field.name + "\" of table \"" + table.name + "\"";
+    var tempAttributesAreCorrect = true;
+    var tempType = fieldAttributes.COLUMN_TYPE.toLowerCase();
+    if (tempType.match(/int\([0-9]+\)/)) {
+        tempType = "int";
+    }
+    if (tempType != field.type.toLowerCase()) {
+        outputMessageList.push(tempDescription + " has the wrong data type \"" + fieldAttributes.COLUMN_TYPE + "\". It should be \"" + field.type + "\".");
+        tempAttributesAreCorrect = false;
+    }
+    var tempIsPrimaryKey = (fieldAttributes.COLUMN_KEY.toUpperCase() == "PRI")
+    var tempShouldBePrimaryKey;
+    if ("primaryKey" in field) {
+        tempShouldBePrimaryKey = field.primaryKey;
+    } else {
+        tempShouldBePrimaryKey = false;
+    }
+    if (tempIsPrimaryKey != tempShouldBePrimaryKey) {
+        outputMessageList.push(tempDescription + " has the wrong COLUMN_KEY value.");
+        tempAttributesAreCorrect = false;
+    }
+    var tempIsAutoIncrement = (fieldAttributes.EXTRA.toLowerCase() == "auto_increment")
+    var tempShouldBeAutoIncrement;
+    if ("autoIncrement" in field) {
+        tempShouldBeAutoIncrement = field.autoIncrement;
+    } else {
+        tempShouldBeAutoIncrement = false;
+    }
+    if (tempIsAutoIncrement != tempShouldBeAutoIncrement) {
+        outputMessageList.push(tempDescription + " has the wrong EXTRA value.");
+        tempAttributesAreCorrect = false;
+    }
+    if (tempAttributesAreCorrect) {
+        outputMessageList = [tempDescription + " exists and has the correct attributes."];
+    }
+    return {
+        isCorrect: tempAttributesAreCorrect,
+        message: outputMessageList.join("\n")
+    };
+}
+
 function createDatabase(done) {
     connection.query(
         "CREATE DATABASE " + databaseName,
@@ -138,15 +181,37 @@ function addTableField(table, field, done) {
 }
 
 function setUpTableField(table, field, done) {
-    // TODO: Implement.
-    
-    done();
+    getTableFieldAttributes(table, field, function(fieldAttributes) {
+        if (fieldAttributes !== null) {
+            var tempResult = compareTableFieldAttributes(table, field, fieldAttributes);
+            console.log(tempResult.message);
+            if (!tempResult.isCorrect) {
+                console.log("Aborting.");
+                exitCleanly();
+            }
+            done();
+            return;
+        }
+        console.log("Adding field \"" +  + "\" to table \"" +  + "\"...");
+        addTableField(table, field, function() {
+            console.log("Added field \"" +  + "\" to table \"" +  + "\".");
+            done();
+        });
+    });
 }
 
 function setUpTableFields(table, done) {
-    // TODO: Implement.
-    
-    done();
+    var index = 0;
+    function setUpNextTableField() {
+        if (index >= table.fields.length) {
+            done();
+            return;
+        }
+        var tempField = table.fields[index];
+        index += 1;
+        setUpTableField(table, tempField, setUpNextTableField);
+    }
+    setUpNextTableField();
 }
 
 function setUpTable(table, done) {
@@ -203,45 +268,13 @@ function setUpSchemaCommand() {
 
 function verifyTableField(table, field, done) {
     getTableFieldAttributes(table, field, function(fieldAttributes) {
-        var tempDescription = "Field \"" + field.name + "\" of table \"" + table.name + "\"";
         if (fieldAttributes === null) {
             console.log(tempDescription + " is missing.");
+            done();
             return;
         }
-        var tempAttributesAreCorrect = true;
-        var tempType = fieldAttributes.COLUMN_TYPE.toLowerCase();
-        if (tempType.match(/int\([0-9]+\)/)) {
-            tempType = "int";
-        }
-        if (tempType != field.type.toLowerCase()) {
-            console.log(tempDescription + " has the wrong data type \"" + fieldAttributes.COLUMN_TYPE + "\". It should be \"" + field.type + "\".");
-            tempAttributesAreCorrect = false;
-        }
-        var tempIsPrimaryKey = (fieldAttributes.COLUMN_KEY.toUpperCase() == "PRI")
-        var tempShouldBePrimaryKey;
-        if ("primaryKey" in field) {
-            tempShouldBePrimaryKey = field.primaryKey;
-        } else {
-            tempShouldBePrimaryKey = false;
-        }
-        if (tempIsPrimaryKey != tempShouldBePrimaryKey) {
-            console.log(tempDescription + " has the wrong COLUMN_KEY value.");
-            tempAttributesAreCorrect = false;
-        }
-        var tempIsAutoIncrement = (fieldAttributes.EXTRA.toLowerCase() == "auto_increment")
-        var tempShouldBeAutoIncrement;
-        if ("primaryKey" in field) {
-            tempShouldBeAutoIncrement = field.primaryKey;
-        } else {
-            tempShouldBeAutoIncrement = false;
-        }
-        if (tempIsAutoIncrement != tempShouldBeAutoIncrement) {
-            console.log(tempDescription + " has the wrong EXTRA value.");
-            tempAttributesAreCorrect = false;
-        }
-        if (tempAttributesAreCorrect) {
-            console.log(tempDescription + " exists and has the correct attributes.");
-        }
+        var tempResult = compareTableFieldAttributes(table, field, fieldAttributes);
+        console.log(tempResult.message);
         done();
     });
 }
