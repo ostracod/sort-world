@@ -66,6 +66,64 @@ function tableFieldExists(table, field, done) {
     done();
 }
 
+function createDatabase(done) {
+    connection.query(
+        "CREATE DATABASE " + databaseName,
+        [],
+        function (error, results, fields) {
+            if (error) {
+                reportSqlError(error);
+                exitCleanly();
+                return;
+            }
+            done();
+        }
+    );
+}
+
+function createTable(table, done) {
+    var fieldDescriptionList = [];
+    var primaryKeyField = null;
+    var index = 0;
+    while (index < table.fields.length) {
+        var tempField = table.fields[index];
+        var tempDescription = tempField.name + " " + tempField.type;
+        if ("autoIncrement" in tempField) {
+            if (tempField.autoIncrement) {
+                tempDescription += " AUTO_INCREMENT";
+            }
+        }
+        fieldDescriptionList.push(tempDescription);
+        if ("primaryKey" in tempField) {
+            if (tempField.primaryKey) {
+                primaryKeyField = tempField;
+            }
+        }
+        index += 1;
+    }
+    if (primaryKeyField !== null) {
+        fieldDescriptionList.push("PRIMARY KEY (" + primaryKeyField.name + ")");
+    }
+    connection.query(
+        "CREATE TABLE " + databaseName + "." + table.name + "(" + fieldDescriptionList.join(", ") + ")",
+        [],
+        function (error, results, fields) {
+            if (error) {
+                reportSqlError(error);
+                exitCleanly();
+                return;
+            }
+            done();
+        }
+    );
+}
+
+function addTableField(table, field, done) {
+    // TODO: Implement.
+    
+    done();
+}
+
 function setUpTableField(table, field, done) {
     // TODO: Implement.
     
@@ -79,15 +137,32 @@ function setUpTableFields(table, done) {
 }
 
 function setUpTable(table, done) {
-    // TODO: Implement.
-    
-    done();
+    tableExists(table, function(exists) {
+        if (exists) {
+            console.log("Table \"" + table.name + "\" already exists.");
+            setUpTableFields(table, done);
+            return;
+        }
+        console.log("Creating table \"" + table.name + "\"...");
+        createTable(table, function() {
+            console.log("Created table \"" + table.name + "\".");
+            setUpTableFields(table, done);
+        });
+    });
 }
 
 function setUpTables(done) {
-    // TODO: Implement.
-    
-    done();
+    var index = 0;
+    function setUpNextTable() {
+        if (index >= schemaConfig.tables.length) {
+            done();
+            return;
+        }
+        var tempTable = schemaConfig.tables[index];
+        index += 1;
+        setUpTable(tempTable, setUpNextTable);
+    }
+    setUpNextTable();
 }
 
 function setUpDatabase(done) {
@@ -98,19 +173,10 @@ function setUpDatabase(done) {
             return;
         }
         console.log("Creating database \"" + databaseName + "\"...");
-        connection.query(
-            "CREATE DATABASE " + databaseName,
-            [],
-            function (error, results, fields) {
-                if (error) {
-                    reportSqlError(error);
-                    exitCleanly();
-                    return;
-                }
-                console.log("Created database \"" + databaseName + "\".");
-                setUpTables(done);
-            }
-        );
+        createDatabase(function() {
+            console.log("Created database \"" + databaseName + "\".");
+            setUpTables(done);
+        });
     });
 }
 
@@ -135,9 +201,15 @@ function verifyTableFields(table, done) {
 }
 
 function verifyTable(table, done) {
-    // TODO: Implement.
-    
-    done();
+    tableExists(table, function(exists) {
+        if (!exists) {
+            console.log("Table \"" + table.name + "\" is missing.");
+            done();
+            return;
+        }
+        console.log("Table \"" + table.name + "\" exists.");
+        verifyTableFields(table, done);
+    });
 }
 
 function verifyTables(done) {
@@ -149,15 +221,7 @@ function verifyTables(done) {
         }
         var tempTable = schemaConfig.tables[index];
         index += 1;
-        tableExists(tempTable, function(exists) {
-            if (!exists) {
-                console.log("Table \"" + tempTable.name + "\" is missing.");
-                verifyNextTable();
-                return;
-            }
-            console.log("Table \"" + tempTable.name + "\" exists.");
-            verifyTable(verifyNextTable);
-        });
+        verifyTable(tempTable, verifyNextTable);
     }
     verifyNextTable();
 }

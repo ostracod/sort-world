@@ -4,6 +4,12 @@
             "name": "Users",
             "fields": [
                 {
+                    "name": "uid",
+                    "type": "INT",
+                    "primaryKey": true,
+                    "autoIncrement": true
+                },
+                {
                     "name": "username",
                     "type": "VARCHAR(100)"
                 },
