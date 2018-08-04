@@ -195,6 +195,21 @@ function addTableField(table, field, done) {
     );
 }
 
+function deleteDatabase(done) {
+    connection.query(
+        "DROP DATABASE " + databaseName,
+        [],
+        function (error, results, fields) {
+            if (error) {
+                reportSqlError(error);
+                exitCleanly();
+                return;
+            }
+            done();
+        }
+    );
+}
+
 function setUpTableField(table, field, done) {
     getTableFieldAttributes(table, field, function(fieldAttributes) {
         if (fieldAttributes !== null) {
@@ -239,7 +254,7 @@ function setUpTable(table, done) {
         console.log("Creating table \"" + table.name + "\"...");
         createTable(table, function() {
             console.log("Created table \"" + table.name + "\".");
-            setUpTableFields(table, done);
+            done();
         });
     });
 }
@@ -356,9 +371,17 @@ function verifySchemaCommand() {
 
 function destroyDatabase() {
     console.log("Destroying database...");
-    // TODO: Implement.
-    
-    exitCleanly();
+    databaseExists(function(exists) {
+        if (!exists) {
+            console.log("Database is already missing.");
+            exitCleanly();
+            return;
+        }
+        deleteDatabase(function() {
+            console.log("Destroyed database.");
+            exitCleanly();
+        });
+    });
 }
 
 function destroySchemaCommand() {
