@@ -137,19 +137,24 @@ function createDatabase(done) {
     );
 }
 
+function getFieldDefinition(field) {
+    var output = field.name + " " + field.type;
+    if ("autoIncrement" in field) {
+        if (field.autoIncrement) {
+            output += " AUTO_INCREMENT";
+        }
+    }
+    return output;
+}
+
 function createTable(table, done) {
-    var fieldDescriptionList = [];
+    var fieldDefinitionList = [];
     var primaryKeyField = null;
     var index = 0;
     while (index < table.fields.length) {
         var tempField = table.fields[index];
-        var tempDescription = tempField.name + " " + tempField.type;
-        if ("autoIncrement" in tempField) {
-            if (tempField.autoIncrement) {
-                tempDescription += " AUTO_INCREMENT";
-            }
-        }
-        fieldDescriptionList.push(tempDescription);
+        var tempDefinition = getFieldDefinition(tempField);
+        fieldDefinitionList.push(tempDefinition);
         if ("primaryKey" in tempField) {
             if (tempField.primaryKey) {
                 primaryKeyField = tempField;
@@ -158,10 +163,10 @@ function createTable(table, done) {
         index += 1;
     }
     if (primaryKeyField !== null) {
-        fieldDescriptionList.push("PRIMARY KEY (" + primaryKeyField.name + ")");
+        fieldDefinitionList.push("PRIMARY KEY (" + primaryKeyField.name + ")");
     }
     connection.query(
-        "CREATE TABLE " + databaseName + "." + table.name + "(" + fieldDescriptionList.join(", ") + ")",
+        "CREATE TABLE " + databaseName + "." + table.name + " (" + fieldDefinitionList.join(", ") + ")",
         [],
         function (error, results, fields) {
             if (error) {
@@ -175,9 +180,19 @@ function createTable(table, done) {
 }
 
 function addTableField(table, field, done) {
-    // TODO: Implement.
-    
-    done();
+    var tempDefinition = getFieldDefinition(field);
+    connection.query(
+        "ALTER TABLE " + databaseName + "." + table.name + " ADD COLUMN " + tempDefinition,
+        [],
+        function (error, results, fields) {
+            if (error) {
+                reportSqlError(error);
+                exitCleanly();
+                return;
+            }
+            done();
+        }
+    );
 }
 
 function setUpTableField(table, field, done) {
@@ -192,9 +207,9 @@ function setUpTableField(table, field, done) {
             done();
             return;
         }
-        console.log("Adding field \"" +  + "\" to table \"" +  + "\"...");
+        console.log("Adding field \"" + field.name + "\" to table \"" + table.name + "\"...");
         addTableField(table, field, function() {
-            console.log("Added field \"" +  + "\" to table \"" +  + "\".");
+            console.log("Added field \"" + field.name + "\" to table \"" + table.name + "\".");
             done();
         });
     });
@@ -269,7 +284,7 @@ function setUpSchemaCommand() {
 function verifyTableField(table, field, done) {
     getTableFieldAttributes(table, field, function(fieldAttributes) {
         if (fieldAttributes === null) {
-            console.log(tempDescription + " is missing.");
+            console.log("Field \"" + field.name + "\" of table \"" + table.name + "\" is missing.");
             done();
             return;
         }
