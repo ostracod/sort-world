@@ -84,8 +84,10 @@ function compareTableFieldAttributes(table, field, fieldAttributes) {
     var tempDescription = "Field \"" + field.name + "\" of table \"" + table.name + "\"";
     var tempAttributesAreCorrect = true;
     var tempType = fieldAttributes.COLUMN_TYPE.toLowerCase();
-    if (tempType.match(/int\([0-9]+\)/)) {
+    if (tempType.match(/^int\([0-9]+\)$/)) {
         tempType = "int";
+    } else if (tempType.match(/^bigint\([0-9]+\)$/)) {
+        tempType = "bigint";
     }
     if (tempType != field.type.toLowerCase()) {
         outputMessageList.push(tempDescription + " has the wrong data type \"" + fieldAttributes.COLUMN_TYPE + "\". It should be \"" + field.type + "\".");
