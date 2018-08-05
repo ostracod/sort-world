@@ -71,8 +71,7 @@ router.get("/createAccount", function(req, res, next) {
 router.post("/createAccountAction", function(req, res, next) {
     var tempUsername = req.body.username;
     var tempPassword = req.body.password;
-    var tempEmail = req.body.email;
-    var tempAvatar = parseInt(req.body.avatar);
+    var tempEmailAddress = req.body.emailAddress;
     if (tempUsername.length > 30) {
         res.json({success: false, message: "Your username may not be longer than 30 characters."});
         return;
@@ -99,7 +98,7 @@ router.post("/createAccountAction", function(req, res, next) {
                 accountUtils.addAccount({
                     username: tempUsername,
                     passwordHash: tempPasswordHash,
-                    email: tempEmail
+                    emailAddress: tempEmailAddress
                 }, function(error) {
                     accountUtils.releaseLock();
                     if (error) {
@@ -110,6 +109,13 @@ router.post("/createAccountAction", function(req, res, next) {
                 });
             });
         });
+    });
+});
+
+router.get("/menu", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
+    tempUsername = req.session.username;
+    res.render("menu.html", {
+        username: tempUsername
     });
 });
 

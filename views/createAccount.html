@@ -1,14 +1,12 @@
 <html>
     <head>
         <script src="javascript/global.js"></script>
-        <script src="javascript/pos.js"></script>
-        <script src="javascript/sprite.js"></script>
         <link type="text/css" rel="stylesheet" media="all" href="stylesheets/global.css" />
         <script>
 
 var isCreatingAccount = false;
 
-function CreateAccountRequest(username, password, email) {
+function CreateAccountRequest(username, password, emailAddress) {
     if (isCreatingAccount) {
         return;
     }
@@ -17,7 +15,7 @@ function CreateAccountRequest(username, password, email) {
     AjaxRequest.call(this, "createAccountAction", {}, {
         username: username,
         password: password,
-        email: email
+        emailAddress: emailAddress
     });
 }
 setParentClass(CreateAccountRequest, AjaxRequest);
@@ -38,7 +36,7 @@ function processFields() {
     var tempUsername = document.getElementById("username").value;
     var tempPassword = document.getElementById("password").value;
     var tempConfirmPassword = document.getElementById("confirmPassword").value;
-    var tempEmail = document.getElementById("email").value;
+    var tempEmailAddress = document.getElementById("emailAddress").value;
     if (tempUsername.length < 1) {
         alert("Please enter a username.");
         return;
@@ -55,15 +53,15 @@ function processFields() {
         alert("The passwords you entered do not match.");
         return;
     }
-    if (tempEmail.length < 1) {
+    if (tempEmailAddress.length < 1) {
         alert("Please enter an email address.");
         return;
     }
-    if (tempEmail.indexOf("@") < 0 || tempEmail.indexOf(".") < 0) {
+    if (tempEmailAddress.indexOf("@") < 0 || tempEmailAddress.indexOf(".") < 0) {
         alert("Please enter a valid email address.");
         return;
     }
-    new CreateAccountRequest(tempUsername, tempPassword, tempEmail);
+    new CreateAccountRequest(tempUsername, tempPassword, tempEmailAddress);
     return;
 }
 
@@ -92,7 +90,7 @@ function processFields() {
                     </tr>
                     <tr>
                         <td>Email Address:</td>
-                        <td><input id="email" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" /></td>
+                        <td><input id="emailAddress" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" /></td>
                     </tr>
                     <tr>
                         <td></td>
