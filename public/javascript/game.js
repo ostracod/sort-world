@@ -32,6 +32,7 @@ var blockAmount = 30; // Should be populated from the server.
 var blockMargin = 20;
 var blockWidth = (canvasWidth - blockMargin * 2) / blockAmount;
 var blockPosY = 700;
+var blockList;
 
 // Thanks to CatTail for this snippet of code.
 var encodeHtmlEntity = function(str) {
@@ -210,7 +211,7 @@ Player.prototype.strokeArm = function(bodyPos, armPos, radiusOffset) {
     context.moveTo(bodyPos.x, bodyPos.y);
     context.lineTo(armPos.x, armPos.y);
     context.stroke();
-    var tempRadius = Math.floor(blockWidth / 2) + radiusOffset;
+    var tempRadius = Math.floor(blockWidth / 2) - 3 + radiusOffset;
     var tempOffset = 6;
     context.beginPath();
     context.arc(armPos.x, armPos.y - tempOffset, tempRadius, 0, Math.PI);
@@ -263,6 +264,21 @@ Player.prototype.draw = function() {
     context.stroke();
     
     //drawCenteredText(tempPos, this.username);
+}
+
+function Block(value) {
+    this.value = value;
+    this.color = new Color(178 - this.value, 64, 78 + this.value);
+    this.height = 200 + value * 4;
+}
+
+Block.prototype.draw = function(posX) {
+    var tempPosX = convertBlockPosToScreenPos(posX);
+    var tempPosY = blockPosY - 12;
+    context.fillStyle = "#000000";
+    context.fillRect(tempPosX - Math.floor(blockWidth / 2 + 3), tempPosY - this.height - 6, blockWidth + 6, this.height + 12);
+    context.fillStyle = this.color.toString();
+    context.fillRect(tempPosX - Math.floor(blockWidth / 2 - 3), tempPosY - this.height, blockWidth - 6, this.height);
 }
 
 function Color(r, g, b) {
@@ -594,8 +610,12 @@ function timerEvent() {
     }
     
     clearCanvas();
-    // TODO: Draw blocks.
-    
+    var index = 0;
+    while (index < blockList.length) {
+        var tempBlock = blockList[index];
+        tempBlock.draw(index);
+        index += 1;
+    }
     var index = 0;
     while (index < entityList.length) {
         var tempEntity = entityList[index];
@@ -634,6 +654,11 @@ function initializeGame() {
     
     window.onkeydown = keyDownEvent;
     window.onkeyup = keyUpEvent;
+    
+    blockList = [];
+    while (blockList.length < blockAmount) {
+        blockList.push(new Block(Math.floor(Math.random() * 100)));
+    }
     
     localPlayer = new Player(-1, null, null, null);
     addStartPlayingCommand();
