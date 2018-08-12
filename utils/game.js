@@ -89,6 +89,10 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
             }
             var tempCommand = commandList[index];
             index += 1;
+            if (tempCommand.commandName == "startPlaying") {
+                performStartPlayingCommand(tempCommand, tempPlayer, tempCommandList, processNextCommand, errorHandler);
+                return;
+            }
             if (tempCommand.commandName == "addChatMessage") {
                 performAddChatMessageCommand(tempCommand, tempPlayer, tempCommandList);
             }
@@ -123,6 +127,15 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
     }
 }
 
+function addSetLocalPlayerInfoCommand(account, player, commandList) {
+    commandList.push({
+        commandName: "setLocalPlayerInfo",
+        username: account.username,
+        avatarColor: account.avatarColor,
+        score: account.score
+    });
+}
+
 function addAddChatMessageCommand(chatMessage, commandList) {
     commandList.push({
         commandName: "addChatMessage",
@@ -141,6 +154,20 @@ function addAddOnlinePlayerCommand(username, commandList) {
     commandList.push({
         commandName: "addOnlinePlayer",
         username: username
+    });
+}
+
+function performStartPlayingCommand(command, player, commandList, done, errorHandler) {
+    accountUtils.acquireLock(function() {
+        accountUtils.getAccountByUsername(player.username, function(error, result) {
+            accountUtils.releaseLock();
+            if (error) {
+                errorHandler(error);
+                return;
+            }
+            addSetLocalPlayerInfoCommand(result, player, commandList);
+            done();
+        });
     });
 }
 

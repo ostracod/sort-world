@@ -27,6 +27,11 @@ var localPlayer;
 var gameUpdateSocket;
 var gameUpdateStartTimestamp;
 var moduleList = [];
+var colorSet;
+var blockAmount = 30; // Should be populated from the server.
+var blockMargin = 20;
+var blockWidth = (canvasWidth - blockMargin * 2) / blockAmount;
+var blockPosY = 700;
 
 // Thanks to CatTail for this snippet of code.
 var encodeHtmlEntity = function(str) {
@@ -60,6 +65,9 @@ function handleGameUpdateRequest(data) {
         var index = 0;
         while (index < tempCommandList.length) {
             var tempCommand = tempCommandList[index];
+            if (tempCommand.commandName == "setLocalPlayerInfo") {
+                performSetLocalPlayerInfoCommand(tempCommand);
+            }
             if (tempCommand.commandName == "addChatMessage") {
                 performAddChatMessageCommand(tempCommand);
             }
@@ -112,6 +120,12 @@ function addGetOnlinePlayersCommand() {
     gameUpdateCommandList.push({
         commandName: "getOnlinePlayers"
     });
+}
+
+function performSetLocalPlayerInfoCommand(command) {
+    localPlayer.username = command.username;
+    localPlayer.avatarColor = command.avatarColor;
+    localPlayer.score = command.score;
 }
 
 function performAddChatMessageCommand(command) {
@@ -177,20 +191,76 @@ Entity.prototype.draw = function() {
     // Do nothing.
 }
 
+function convertBlockPosToScreenPos(blockPos) {
+    return Math.floor(blockMargin + blockPos * (canvasWidth - blockMargin * 2) / blockAmount + blockWidth / 2);
+}
+
 function Player(id, username, avatarColor, score) {
     Entity.call(this, id);
     this.username = username;
     this.avatarColor = avatarColor;
     this.score = score;
+    this.leftArmPos = 0;
+    this.rightArmPos = 5;
 }
 setParentClass(Player, Entity);
+
+Player.prototype.strokeArm = function(bodyPos, armPos, radiusOffset) {
+    context.beginPath();
+    context.moveTo(bodyPos.x, bodyPos.y);
+    context.lineTo(armPos.x, armPos.y);
+    context.stroke();
+    var tempRadius = Math.floor(blockWidth / 2) + radiusOffset;
+    var tempOffset = 6;
+    context.beginPath();
+    context.arc(armPos.x, armPos.y - tempOffset, tempRadius, 0, Math.PI);
+    context.fill();
+    if (radiusOffset > 0) {
+        context.fillRect(armPos.x - tempRadius, armPos.y - tempOffset - radiusOffset, tempRadius * 2, radiusOffset, radiusOffset);
+    }
+}
 
 Player.prototype.draw = function() {
     if (this.username === null) {
         return;
     }
     Entity.prototype.draw.call(this);
-    // TODO: Implement.
+    var tempColor = colorSet[this.avatarColor];
+    var tempLeftArmPos = new Pos(convertBlockPosToScreenPos(this.leftArmPos), blockPosY);
+    var tempRightArmPos = new Pos(convertBlockPosToScreenPos(this.rightArmPos), blockPosY);
+    var tempDelta = Math.abs(tempLeftArmPos.x - tempRightArmPos.x);
+    var tempOffsetY = 230 - tempDelta / 14;
+    var tempBodyPos = new Pos(Math.floor((tempLeftArmPos.x + tempRightArmPos.x) / 2), blockPosY + tempOffsetY);
+    context.lineCap = "round";
+    context.fillStyle = "#000000";
+    context.strokeStyle = "#000000";
+    context.beginPath();
+    context.arc(tempBodyPos.x, tempBodyPos.y, 56, 0, 2 * Math.PI);
+    context.fill();
+    context.lineWidth = 22;
+    this.strokeArm(tempBodyPos, tempLeftArmPos, 6);
+    this.strokeArm(tempBodyPos, tempRightArmPos, 6);
+    context.fillStyle = tempColor.toString();
+    context.strokeStyle = tempColor.toString();
+    context.beginPath();
+    context.arc(tempBodyPos.x, tempBodyPos.y, 50, 0, 2 * Math.PI);
+    context.fill();
+    context.lineWidth = 10;
+    this.strokeArm(tempBodyPos, tempLeftArmPos, 0);
+    this.strokeArm(tempBodyPos, tempRightArmPos, 0);
+    context.fillStyle = "#FFFFFF";
+    context.strokeStyle = "#FFFFFF";
+    context.lineWidth = 10;
+    context.beginPath();
+    context.arc(tempBodyPos.x - 20, tempBodyPos.y - 14, 10, 0, 2 * Math.PI);
+    context.fill();
+    context.beginPath();
+    context.arc(tempBodyPos.x + 20, tempBodyPos.y - 14, 10, 0, 2 * Math.PI);
+    context.fill();
+    context.beginPath();
+    context.moveTo(tempBodyPos.x - 20, tempBodyPos.y + 14);
+    context.bezierCurveTo(tempBodyPos.x - 16, tempBodyPos.y + 34, tempBodyPos.x + 16, tempBodyPos.y + 34, tempBodyPos.x + 20, tempBodyPos.y + 14);
+    context.stroke();
     
     //drawCenteredText(tempPos, this.username);
 }
@@ -252,6 +322,18 @@ Color.prototype.toString = function() {
     }
     return this.string;
 }
+
+colorSet = [
+    // Avatar colors.
+    new Color(255, 64, 64),
+    new Color(255, 128, 0),
+    new Color(192, 192, 64),
+    new Color(0, 192, 0),
+    new Color(0, 192, 192),
+    new Color(64, 64, 255),
+    new Color(192, 0, 192),
+    new Color(128, 128, 128)
+];
 
 function OverlayChatMessage(playerName, text) {
     this.tag = document.createElement("div");
@@ -421,8 +503,30 @@ function keyDownEvent(event) {
             overlayChatInput.focus();
             overlayChatInputIsFocused = true;
         }
-        // TODO: Process key presses.
-        
+        if (keyCode == 65) {
+            if (localPlayer.leftArmPos > 0) {
+                localPlayer.leftArmPos -= 1;
+            }
+        }
+        if (keyCode == 68) {
+            if (localPlayer.leftArmPos < blockAmount - 1) {
+                localPlayer.leftArmPos += 1;
+            }
+        }
+        if (keyCode == 74) {
+            if (localPlayer.rightArmPos > 0) {
+                localPlayer.rightArmPos -= 1;
+            }
+        }
+        if (keyCode == 76) {
+            if (localPlayer.rightArmPos < blockAmount - 1) {
+                localPlayer.rightArmPos += 1;
+            }
+        }
+        if (keyCode == 32) {
+            
+            return false;
+        }
     }
 }
 
