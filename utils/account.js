@@ -105,21 +105,23 @@ AccountUtils.prototype.getAccountByUsername = function(username, done) {
     );
 }
 
-AccountUtils.prototype.updateAccount = function(account, done) {
+AccountUtils.prototype.updateAccount = function(uid, valueSet, done) {
     if (!accountsDatabaseLock) {
         console.log("Missing lock!");
         return;
     }
+    var tempQueryTextList = [];
+    var tempValueList = [];
+    for (name in valueSet) {
+        var tempValue = valueSet[name];
+        tempQueryTextList.push(name + " = ?");
+        tempValueList.push(tempValue);
+    }
+    var tempQueryText = tempQueryTextList.join(", ");
+    tempValueList.push(uid);
     connection.query(
-        "UPDATE Users SET username = ?, passwordHash = ?, emailAddress = ?, score = ?, avatarColor = ? WHERE uid = ?",
-        [
-            account.username,
-            account.passwordHash,
-            account.emailAddress,
-            account.score,
-            account.avatarColor,
-            account.uid
-        ],
+        "UPDATE Users SET " + tempQueryText + " WHERE uid = ?",
+        tempValueList,
         function (error, results, fields) {
             if (error) {
                 done(accountUtils.convertSqlErrorToText(error));

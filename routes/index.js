@@ -3,6 +3,7 @@ var express = require("express");
 var router = express.Router();
 var pageUtils = require("utils/page.js");
 var accountUtils = require("utils/account.js");
+var gameUtils = require("utils/game.js");
 var app = require("sortWorld");
 
 var checkAuthentication = pageUtils.checkAuthentication;
@@ -117,6 +118,44 @@ router.get("/menu", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, n
     res.render("menu.html", {
         username: tempUsername
     });
+});
+
+router.get("/game", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
+    res.render("game.html", {});
+});
+
+router.ws("/gameUpdate", checkAuthentication(SOCKET_ERROR_OUTPUT), function(ws, req, next) {
+    console.log("Opening socket.");
+    ws.on("message", function(message) {
+        var tempCommandList = JSON.parse(message);
+        if (gameUtils.isInDevelopmentMode) {
+            setTimeout(function() {
+                performUpdate(tempCommandList);
+            }, 50 + Math.floor(Math.random() * 150));
+        } else {
+            performUpdate(tempCommandList);
+        }
+    });
+    function performUpdate(commandList) {
+        gameUtils.performUpdate(req.session.username, commandList, function(result) {
+            var tempRetryCount = 0;
+            function tryToSendResponse() {
+                try {
+                    ws.send(JSON.stringify(result));
+                } catch (error) {
+                    console.log(error);
+                    if (tempRetryCount < 3) {
+                        console.log("Trying to send response again.");
+                        setTimeout(tryToSendResponse, 100);
+                        tempRetryCount += 1;
+                    } else {
+                        console.log("Exceeded maximum number of retries.");
+                    }
+                }
+            }
+            tryToSendResponse();
+        });
+    }
 });
 
 module.exports = router;
