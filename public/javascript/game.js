@@ -84,6 +84,9 @@ function handleGameUpdateRequest(data) {
             if (tempCommand.commandName == "setBlocks") {
                 performSetBlocksCommand(tempCommand);
             }
+            if (tempCommand.commandName == "setEntities") {
+                performSetEntitiesCommand(tempCommand);
+            }
             index += 1;
         }
         // Repeat unprocessed client-side commands.
@@ -138,6 +141,20 @@ function addGetOnlinePlayersCommand() {
 function addGetBlocksCommand() {
     gameUpdateCommandList.push({
         commandName: "getBlocks"
+    });
+}
+
+function addSetArmPosCommand() {
+    gameUpdateCommandList.push({
+        commandName: "setArmPos",
+        armPos1: localPlayer.armPos1,
+        armPos2: localPlayer.armPos2
+    });
+}
+
+function addGetEntitiesCommand() {
+    gameUpdateCommandList.push({
+        commandName: "getEntities"
     });
 }
 
@@ -206,6 +223,25 @@ function performSetBlocksCommand(command) {
     while (index < command.blocks.length) {
         var tempBlockInfo = command.blocks[index];
         new Block(tempBlockInfo.id, tempBlockInfo.value);
+        index += 1;
+    }
+}
+
+function performSetEntitiesCommand(command) {
+    entityList = [localPlayer];
+    var index = 0;
+    while (index < command.entities.length) {
+        var tempEntityInfo = command.entities[index];
+        if (tempEntityInfo.className == "Player") {
+            var tempPlayer = new Player(
+                tempEntityInfo.id,
+                tempEntityInfo.username,
+                tempEntityInfo.avatarColor,
+                tempEntityInfo.score
+            );
+            tempPlayer.armPos1 = tempEntityInfo.armPos1;
+            tempPlayer.armPos2 = tempEntityInfo.armPos2;
+        }
         index += 1;
     }
 }
@@ -661,6 +697,8 @@ function timerEvent() {
             addGetChatMessagesCommand();
             addGetOnlinePlayersCommand();
             addGetBlocksCommand();
+            addSetArmPosCommand();
+            addGetEntitiesCommand();
             performGameUpdateRequest();
         }
     }

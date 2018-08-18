@@ -110,6 +110,12 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
             if (tempCommand.commandName == "getBlocks") {
                 performGetBlocksCommand(tempCommand, tempPlayer, tempCommandList);
             }
+            if (tempCommand.commandName == "setArmPos") {
+                performSetArmPosCommand(tempCommand, tempPlayer, tempCommandList);
+            }
+            if (tempCommand.commandName == "getEntities") {
+                performGetEntitiesCommand(tempCommand, tempPlayer, tempCommandList);
+            }
             if (tempCommand.commandName == "swapBlocks") {
                 performSwapBlocksCommand(tempCommand, tempPlayer, tempCommandList);
             }
@@ -188,6 +194,22 @@ function addSetBlocksCommand(commandList) {
     });
 }
 
+function addSetEntitiesCommand(player, commandList) {
+    var tempEntityInfoList = [];
+    var index = 0;
+    while (index < entityList.length) {
+        var tempEntity = entityList[index];
+        if (tempEntity !== player) {
+            tempEntityInfoList.push(tempEntity.getClientInfo());
+        }
+        index += 1;
+    }
+    commandList.push({
+        commandName: "setEntities",
+        entities: tempEntityInfoList
+    });
+}
+
 function performStartPlayingCommand(command, player, commandList, done, errorHandler) {
     accountUtils.acquireLock(function() {
         accountUtils.getAccountByUsername(player.username, function(error, result) {
@@ -237,6 +259,15 @@ function performGetOnlinePlayersCommand(command, player, commandList) {
 
 function performGetBlocksCommand(command, player, commandList) {
     addSetBlocksCommand(commandList);
+}
+
+function performSetArmPosCommand(command, player, commandList) {
+    player.armPos1 = command.armPos1;
+    player.armPos2 = command.armPos2;
+}
+
+function performGetEntitiesCommand(command, player, commandList) {
+    addSetEntitiesCommand(player, commandList);
 }
 
 function performSwapBlocksCommand(command, player, commandList) {

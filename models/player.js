@@ -14,6 +14,8 @@ function Player(account) {
     this.username = account.username;
     this.score = account.score
     this.avatarColor = account.avatarColor;
+    this.armPos1 = 0;
+    this.armPos2 = 0;
     var tempDate = new Date();
     this.lastActivityTime = tempDate.getTime();
     this.lastChatMessageId = getNextChatMessageId() - 10;
@@ -76,8 +78,10 @@ Player.prototype.getClientInfo = function() {
         className: "Player",
         id: this.id,
         username: this.username,
-        avatarScore: this.avatarColor,
+        avatarColor: this.avatarColor,
         score: this.score,
+        armPos1: this.armPos1,
+        armPos2: this.armPos2
     }
 }
 
