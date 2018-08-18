@@ -110,6 +110,9 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
             if (tempCommand.commandName == "getBlocks") {
                 performGetBlocksCommand(tempCommand, tempPlayer, tempCommandList);
             }
+            if (tempCommand.commandName == "swapBlocks") {
+                performSwapBlocksCommand(tempCommand, tempPlayer, tempCommandList);
+            }
         }
     }
     tempPlayer = gameUtils.getPlayerByUsername(username);
@@ -236,6 +239,10 @@ function performGetBlocksCommand(command, player, commandList) {
     addSetBlocksCommand(commandList);
 }
 
+function performSwapBlocksCommand(command, player, commandList) {
+    gameUtils.swapBlocksByIndexAndId(command.index1, command.id1, command.index2, command.id2);
+}
+
 GameUtils.prototype.persistEverything = function(done) {
     if (this.isPersistingEverything) {
         done();
@@ -288,6 +295,16 @@ GameUtils.prototype.generateBlocks = function() {
     while (blockList.length < this.blockAmount) {
         new Block(Math.floor(Math.random() * 100));
     }
+}
+
+GameUtils.prototype.swapBlocksByIndexAndId = function(index1, id1, index2, id2) {
+    var tempBlock1 = blockList[index1];
+    var tempBlock2 = blockList[index2];
+    if (tempBlock1.id != id1 || tempBlock2.id != id2) {
+        return;
+    }
+    blockList[index1] = tempBlock2;
+    blockList[index2] = tempBlock1;
 }
 
 GameUtils.prototype.gameTimerEvent = function() {

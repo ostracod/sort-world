@@ -90,8 +90,14 @@ function handleGameUpdateRequest(data) {
         var index = 0;
         while (index < gameUpdateCommandList.length) {
             var tempCommand = gameUpdateCommandList[index];
-            // TODO: Parse command here.
-            
+            if (tempCommand.commandName == "swapBlocks") {
+                swapBlocksByIndexAndId(
+                    tempCommand.index1,
+                    tempCommand.id1,
+                    tempCommand.index2,
+                    tempCommand.id2
+                );
+            }
             index += 1;
         }
     } else {
@@ -132,6 +138,16 @@ function addGetOnlinePlayersCommand() {
 function addGetBlocksCommand() {
     gameUpdateCommandList.push({
         commandName: "getBlocks"
+    });
+}
+
+function addSwapBlocksCommand(index1, id1, index2, id2) {
+    gameUpdateCommandList.push({
+        commandName: "swapBlocks",
+        index1: index1,
+        id1: id1,
+        index2: index2,
+        id2: id2
     });
 }
 
@@ -228,8 +244,8 @@ function Player(id, username, avatarColor, score) {
     this.username = username;
     this.avatarColor = avatarColor;
     this.score = score;
-    this.leftArmPos = 0;
-    this.rightArmPos = 5;
+    this.armPos1 = 0;
+    this.armPos2 = 5;
 }
 setParentClass(Player, Entity);
 
@@ -254,11 +270,11 @@ Player.prototype.draw = function() {
     }
     Entity.prototype.draw.call(this);
     var tempColor = colorSet[this.avatarColor];
-    var tempLeftArmPos = new Pos(convertBlockPosToScreenPos(this.leftArmPos), blockPosY);
-    var tempRightArmPos = new Pos(convertBlockPosToScreenPos(this.rightArmPos), blockPosY);
-    var tempDelta = Math.abs(tempLeftArmPos.x - tempRightArmPos.x);
+    var tempArmPos1 = new Pos(convertBlockPosToScreenPos(this.armPos1), blockPosY);
+    var tempArmPos2 = new Pos(convertBlockPosToScreenPos(this.armPos2), blockPosY);
+    var tempDelta = Math.abs(tempArmPos1.x - tempArmPos2.x);
     var tempOffsetY = 230 - tempDelta / 14;
-    var tempBodyPos = new Pos(Math.floor((tempLeftArmPos.x + tempRightArmPos.x) / 2), blockPosY + tempOffsetY);
+    var tempBodyPos = new Pos(Math.floor((tempArmPos1.x + tempArmPos2.x) / 2), blockPosY + tempOffsetY);
     context.lineCap = "round";
     context.fillStyle = "#000000";
     context.strokeStyle = "#000000";
@@ -266,16 +282,16 @@ Player.prototype.draw = function() {
     context.arc(tempBodyPos.x, tempBodyPos.y, 56, 0, 2 * Math.PI);
     context.fill();
     context.lineWidth = 22;
-    this.strokeArm(tempBodyPos, tempLeftArmPos, 6);
-    this.strokeArm(tempBodyPos, tempRightArmPos, 6);
+    this.strokeArm(tempBodyPos, tempArmPos1, 6);
+    this.strokeArm(tempBodyPos, tempArmPos2, 6);
     context.fillStyle = tempColor.toString();
     context.strokeStyle = tempColor.toString();
     context.beginPath();
     context.arc(tempBodyPos.x, tempBodyPos.y, 50, 0, 2 * Math.PI);
     context.fill();
     context.lineWidth = 10;
-    this.strokeArm(tempBodyPos, tempLeftArmPos, 0);
-    this.strokeArm(tempBodyPos, tempRightArmPos, 0);
+    this.strokeArm(tempBodyPos, tempArmPos1, 0);
+    this.strokeArm(tempBodyPos, tempArmPos2, 0);
     context.fillStyle = "#FFFFFF";
     context.strokeStyle = "#FFFFFF";
     context.lineWidth = 10;
@@ -294,6 +310,23 @@ Player.prototype.draw = function() {
     context.textBaseline = "middle";
     context.fillStyle = "#000000";
     context.fillText(this.username, Math.floor(tempBodyPos.x), Math.floor(tempBodyPos.y - 90));
+}
+
+function swapBlocksByIndexAndId(index1, id1, index2, id2) {
+    var tempBlock1 = blockList[index1];
+    var tempBlock2 = blockList[index2];
+    if (tempBlock1.id != id1 || tempBlock2.id != id2) {
+        return;
+    }
+    blockList[index1] = tempBlock2;
+    blockList[index2] = tempBlock1;
+}
+
+Player.prototype.swapBlocks = function() {
+    var tempId1 = blockList[this.armPos1].id;
+    var tempId2 = blockList[this.armPos2].id;
+    swapBlocksByIndexAndId(this.armPos1, tempId1, this.armPos2, tempId2);
+    addSwapBlocksCommand(this.armPos1, tempId1, this.armPos2, tempId2);
 }
 
 function Block(id, value) {
@@ -549,27 +582,27 @@ function keyDownEvent(event) {
             overlayChatInputIsFocused = true;
         }
         if (keyCode == 65) {
-            if (localPlayer.leftArmPos > 0) {
-                localPlayer.leftArmPos -= 1;
+            if (localPlayer.armPos1 > 0) {
+                localPlayer.armPos1 -= 1;
             }
         }
         if (keyCode == 68) {
-            if (localPlayer.leftArmPos < blockAmount - 1) {
-                localPlayer.leftArmPos += 1;
+            if (localPlayer.armPos1 < blockAmount - 1) {
+                localPlayer.armPos1 += 1;
             }
         }
         if (keyCode == 74) {
-            if (localPlayer.rightArmPos > 0) {
-                localPlayer.rightArmPos -= 1;
+            if (localPlayer.armPos2 > 0) {
+                localPlayer.armPos2 -= 1;
             }
         }
         if (keyCode == 76) {
-            if (localPlayer.rightArmPos < blockAmount - 1) {
-                localPlayer.rightArmPos += 1;
+            if (localPlayer.armPos2 < blockAmount - 1) {
+                localPlayer.armPos2 += 1;
             }
         }
         if (keyCode == 32) {
-            
+            localPlayer.swapBlocks();
             return false;
         }
     }
