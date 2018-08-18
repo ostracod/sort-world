@@ -119,6 +119,9 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
             if (tempCommand.commandName == "swapBlocks") {
                 performSwapBlocksCommand(tempCommand, tempPlayer, tempCommandList);
             }
+            if (tempCommand.commandName == "setAvatarColor") {
+                performSetAvatarColorCommand(tempCommand, tempPlayer, tempCommandList);
+            }
         }
     }
     tempPlayer = gameUtils.getPlayerByUsername(username);
@@ -272,6 +275,10 @@ function performGetEntitiesCommand(command, player, commandList) {
 
 function performSwapBlocksCommand(command, player, commandList) {
     gameUtils.swapBlocksByIndexAndId(command.index1, command.id1, command.index2, command.id2);
+}
+
+function performSetAvatarColorCommand(command, player, commandList) {
+    player.avatarColor = command.avatarColor;
 }
 
 GameUtils.prototype.persistEverything = function(done) {

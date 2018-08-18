@@ -28,6 +28,7 @@ var gameUpdateSocket;
 var gameUpdateStartTimestamp;
 var moduleList = [];
 var colorSet;
+var avatarColorButtonList = [];
 var blockAmount = null;
 var blockMargin = 20;
 var blockWidth;
@@ -168,10 +169,18 @@ function addSwapBlocksCommand(index1, id1, index2, id2) {
     });
 }
 
+function addSetAvatarColorCommand() {
+    gameUpdateCommandList.push({
+        commandName: "setAvatarColor",
+        avatarColor: localPlayer.avatarColor,
+    });
+}
+
 function performSetLocalPlayerInfoCommand(command) {
     localPlayer.username = command.username;
     localPlayer.avatarColor = command.avatarColor;
     localPlayer.score = command.score;
+    updateAvatarColorButtons();
 }
 
 function performSetWorldInfoCommand(command) {
@@ -634,6 +643,19 @@ function clearCanvas() {
     context.fillRect(0, 0, canvasWidth, canvasHeight);
 }
 
+function updateAvatarColorButtons() {
+    var index = 0;
+    while (index < avatarColorButtonList.length) {
+        var tempTag = avatarColorButtonList[index];
+        if (index == localPlayer.avatarColor) {
+            tempTag.style.border = "3px #000000 solid";
+        } else {
+            tempTag.style.border = "3px #FFFFFF solid";
+        }
+        index += 1;
+    }
+}
+
 function keyDownEvent(event) {
     lastActivityTime = 0;
     var keyCode = event.which;
@@ -806,6 +828,26 @@ function initializeGame() {
     chatOutput = document.getElementById("chatOutput");
     overlayChatInput = document.getElementById("overlayChatInput");
     overlayChatOutput = document.getElementById("overlayChatOutput");
+    
+    var tempContainer = document.getElementById("avatarColorButtons");
+    var index = 0;
+    while (index < colorSet.length) {
+        var tempColor = colorSet[index];
+        var tempTag = document.createElement("div");
+        tempTag.className = "avatarColorButton";
+        tempTag.style.background = tempColor.toString();
+        (function() {
+            var tempIndex = index;
+            tempTag.onclick = function() {
+                localPlayer.avatarColor = tempIndex;
+                updateAvatarColorButtons();
+                addSetAvatarColorCommand();
+            }
+        })();
+        tempContainer.appendChild(tempTag);
+        avatarColorButtonList.push(tempTag);
+        index += 1;
+    }
     
     var tempModule = new Module("stats");
     tempModule.show();

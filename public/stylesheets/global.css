@@ -110,4 +110,12 @@ input:not([type]), input:[type="text"] {
     background: #442222;
 }
 
+.avatarColorButton {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border: 3px #FFFFFF solid;
+}
+
 

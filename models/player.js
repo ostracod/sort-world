@@ -58,9 +58,7 @@ Player.prototype.persist = function(done) {
             var tempValueSet = {
                 score: self.score,
                 avatarColor: self.avatarColor
-            }
-            tempValueSet.score = self.score;
-            tempValueSet.avatarColor = self.avatarColor;
+            };
             accountUtils.updateAccount(account.uid, tempValueSet, function(error) {
                 accountUtils.releaseLock();
                 if (error) {
