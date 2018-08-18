@@ -143,7 +143,6 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
                     errorHandler("There was a database error. Please try again later.");
                     return;
                 }
-                console.log("USED DB");
                 tempPlayer = new Player(result);
                 startProcessingCommands();
             });

@@ -113,6 +113,56 @@ router.post("/createAccountAction", function(req, res, next) {
     });
 });
 
+router.get("/changePassword", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
+    res.render("changePassword.html", {});
+});
+
+router.post("/changePasswordAction", checkAuthentication(JSON_ERROR_OUTPUT), function(req, res, next) {
+    var tempUsername = req.session.username;
+    var tempOldPassword = req.body.oldPassword;
+    var tempNewPassword = req.body.newPassword;
+    accountUtils.acquireLock(function() {
+        accountUtils.getAccountByUsername(tempUsername, function(error, result) {
+            if (error) {
+                accountUtils.releaseLock();
+                pageUtils.reportDatabaseErrorWithJson(error, req, res);
+                return;
+            }
+            var tempAccount = result;
+            accountUtils.comparePasswordWithHash(tempOldPassword, tempAccount.passwordHash, function(result) {
+                if (!result.success) {
+                    accountUtils.releaseLock();
+                    pageUtils.reportDatabaseErrorWithJson(result.error, req, res);
+                    return;
+                }
+                if (!result.isMatch) {
+                    accountUtils.releaseLock();
+                    res.json({success: false, message: "Incorrect old password."});
+                    return;
+                }
+                accountUtils.generatePasswordHash(tempNewPassword, function(result) {
+                    if (!result.success) {
+                        accountUtils.releaseLock();
+                        pageUtils.reportDatabaseErrorWithJson(result.error, req, res);
+                        return;
+                    }
+                    var tempValueSet = {
+                        passwordHash: result.hash
+                    }
+                    accountUtils.updateAccount(tempAccount.uid, tempValueSet, function(error) {
+                        accountUtils.releaseLock();
+                        if (error) {
+                            pageUtils.reportDatabaseErrorWithJson(error, req, res);
+                            return;
+                        }
+                        res.json({success: true});
+                    });
+                });
+            });
+        });
+    });
+});
+
 router.get("/menu", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
     tempUsername = req.session.username;
     function renderPage() {
