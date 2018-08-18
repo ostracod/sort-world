@@ -8,6 +8,7 @@ function GameUtils() {
     this.persistDelay = 60 * this.framesPerSecond;
     this.isPersistingEverything = false;
     this.blockAmount = 30;
+    this.isFinishingRound = false;
     var mode = app.get("env");
     this.isInDevelopmentMode = (mode == "development");
 }
@@ -19,6 +20,7 @@ module.exports = gameUtils;
 var tempResource = require("models/chatMessage");
 var ChatMessage = tempResource.ChatMessage;
 var chatMessageList = tempResource.chatMessageList;
+var announceMessageInChat = tempResource.announceMessageInChat;
 
 var entityList = require("models/entity").entityList;
 var Player = require("models/player").Player;
@@ -115,6 +117,9 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
             }
             if (tempCommand.commandName == "getEntities") {
                 performGetEntitiesCommand(tempCommand, tempPlayer, tempCommandList);
+            }
+            if (tempCommand.commandName == "getStats") {
+                performGetStatsCommand(tempCommand, tempPlayer, tempCommandList);
             }
             if (tempCommand.commandName == "swapBlocks") {
                 performSwapBlocksCommand(tempCommand, tempPlayer, tempCommandList);
@@ -213,6 +218,13 @@ function addSetEntitiesCommand(player, commandList) {
     });
 }
 
+function addSetStatsCommand(player, commandList) {
+    commandList.push({
+        commandName: "setStats",
+        score: player.score
+    });
+}
+
 function performStartPlayingCommand(command, player, commandList, done, errorHandler) {
     accountUtils.acquireLock(function() {
         accountUtils.getAccountByUsername(player.username, function(error, result) {
@@ -273,8 +285,18 @@ function performGetEntitiesCommand(command, player, commandList) {
     addSetEntitiesCommand(player, commandList);
 }
 
+function performGetStatsCommand(command, player, commandList) {
+    addSetStatsCommand(player, commandList);
+}
+
 function performSwapBlocksCommand(command, player, commandList) {
-    gameUtils.swapBlocksByIndexAndId(command.index1, command.id1, command.index2, command.id2);
+    gameUtils.swapBlocksByIndexAndId(
+        player,
+        command.index1,
+        command.id1,
+        command.index2,
+        command.id2
+    );
 }
 
 function performSetAvatarColorCommand(command, player, commandList) {
@@ -328,14 +350,92 @@ GameUtils.prototype.stopGame = function(done) {
     this.persistEverything(done);
 }
 
+GameUtils.prototype.assignCorrectBlockPos = function(sortedBlockList, block) {
+    var tempStartCorrectPos = sortedBlockList.length;
+    var tempEndCorrectPos = -1;
+    var index = 0;
+    while (index < sortedBlockList.length) {
+        var tempBlock = sortedBlockList[index];
+        if (tempBlock.value == block.value) {
+            if (index < tempStartCorrectPos) {
+                tempStartCorrectPos = index;
+            }
+            if (index > tempEndCorrectPos) {
+                tempEndCorrectPos = index;
+            }
+        }
+        index += 1
+    }
+    block.startCorrectPos = tempStartCorrectPos;
+    block.endCorrectPos = tempEndCorrectPos;
+}
+
 GameUtils.prototype.generateBlocks = function() {
     blockList.length = 0;
     while (blockList.length < this.blockAmount) {
         new Block(Math.floor(Math.random() * 100));
     }
+    var tempSortedBlockList = blockList.slice();
+    tempSortedBlockList.sort(function(block1, block2) {
+        if (block1.value < block2.value) {
+            return -1;
+        }
+        if (block1.value > block2.value) {
+            return 1;
+        }
+        return 0;
+    });
+    var index = 0;
+    while (index < tempSortedBlockList.length) {
+        var tempBlock = tempSortedBlockList[index];
+        this.assignCorrectBlockPos(tempSortedBlockList, tempBlock);
+        index += 1;
+    }
+    var index = 0;
+    while (index < blockList.length) {
+        var tempBlock = blockList[index];
+        tempBlock.closestDistanceToCorrectPos = this.getBlockDistanceToCorrectPos(index);
+        index += 1;
+    }
 }
 
-GameUtils.prototype.swapBlocksByIndexAndId = function(index1, id1, index2, id2) {
+GameUtils.prototype.blockListIsSorted = function() {
+    var index = 1;
+    while (index < blockList.length) {
+        var tempBlock1 = blockList[index - 1];
+        var tempBlock2 = blockList[index];
+        if (tempBlock1.value > tempBlock2.value) {
+            return false;
+        }
+        index += 1;
+    }
+    return true;
+}
+
+GameUtils.prototype.getBlockDistanceToCorrectPos = function(index) {
+    var tempBlock = blockList[index];
+    if (index < tempBlock.startCorrectPos) {
+        return tempBlock.startCorrectPos - index;
+    } else if (index > tempBlock.endCorrectPos) {
+        return index - tempBlock.endCorrectPos;
+    } else {
+        return 0
+    }
+}
+
+GameUtils.prototype.updateBlockClosestDistance = function(index) {
+    var tempBlock = blockList[index];
+    var tempDistance = this.getBlockDistanceToCorrectPos(index);
+    if (tempDistance < tempBlock.closestDistanceToCorrectPos) {
+        var tempOffset = tempBlock.closestDistanceToCorrectPos - tempDistance;
+        tempBlock.closestDistanceToCorrectPos = tempDistance;
+        return tempOffset;
+    } else {
+        return 0;
+    }
+}
+
+GameUtils.prototype.swapBlocksByIndexAndId = function(player, index1, id1, index2, id2) {
     var tempBlock1 = blockList[index1];
     var tempBlock2 = blockList[index2];
     if (tempBlock1.id != id1 || tempBlock2.id != id2) {
@@ -343,6 +443,45 @@ GameUtils.prototype.swapBlocksByIndexAndId = function(index1, id1, index2, id2) 
     }
     blockList[index1] = tempBlock2;
     blockList[index2] = tempBlock1;
+    var tempResult1 = this.updateBlockClosestDistance(index1);
+    var tempResult2 = this.updateBlockClosestDistance(index2);
+    var tempPointCount = tempResult1 + tempResult2;
+    player.pendingPoints += tempPointCount;
+    if (this.blockListIsSorted()) {
+        this.finishRound();
+    }
+}
+
+function pluralize(word, amount) {
+    if (amount == 1) {
+        return word;
+    } else {
+        return word + "s";
+    }
+}
+
+GameUtils.prototype.finishRound = function() {
+    if (this.isFinishingRound) {
+        return;
+    }
+    var self = this;
+    this.isFinishingRound = true;
+    var index = 0;
+    while (index < entityList.length) {
+        var tempEntity = entityList[index];
+        if (classUtils.isInstanceOf(tempEntity, Player)) {
+            var tempPlayer = tempEntity;
+            var tempPointCount = tempPlayer.pendingPoints;
+            announceMessageInChat(tempPlayer.username + " gained " + tempPointCount + " " + pluralize("point", tempPointCount) + ".");
+            tempPlayer.score += tempPointCount;
+            tempPlayer.pendingPoints = 0;
+        }
+        index += 1;
+    }
+    setTimeout(function () {
+        self.isFinishingRound = false;
+        self.generateBlocks();
+    }, 2000);
 }
 
 GameUtils.prototype.gameTimerEvent = function() {

@@ -16,6 +16,7 @@ function Player(account) {
     this.avatarColor = account.avatarColor;
     this.armPos1 = 0;
     this.armPos2 = 0;
+    this.pendingPoints = 0;
     var tempDate = new Date();
     this.lastActivityTime = tempDate.getTime();
     this.lastChatMessageId = getNextChatMessageId() - 10;

@@ -5,6 +5,9 @@ var nextBlockId = 0;
 function Block(value) {
     this.id = nextBlockId;
     this.value = value;
+    this.startCorrectPos = null;
+    this.endCorrectPos = null;
+    this.closestDistanceToCorrectPos = null;
     nextBlockId += 1;
     blockList.push(this);
 }

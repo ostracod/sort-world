@@ -88,6 +88,9 @@ function handleGameUpdateRequest(data) {
             if (tempCommand.commandName == "setEntities") {
                 performSetEntitiesCommand(tempCommand);
             }
+            if (tempCommand.commandName == "setStats") {
+                performSetStatsCommand(tempCommand);
+            }
             index += 1;
         }
         // Repeat unprocessed client-side commands.
@@ -156,6 +159,12 @@ function addSetArmPosCommand() {
 function addGetEntitiesCommand() {
     gameUpdateCommandList.push({
         commandName: "getEntities"
+    });
+}
+
+function addGetStatsCommand() {
+    gameUpdateCommandList.push({
+        commandName: "getStats"
     });
 }
 
@@ -254,6 +263,10 @@ function performSetEntitiesCommand(command) {
         index += 1;
     }
     entityList.push(localPlayer);
+}
+
+function performSetStatsCommand(command) {
+    localPlayer.score = command.score;
 }
 
 function Entity(id) {
@@ -776,6 +789,7 @@ function timerEvent() {
             addGetBlocksCommand();
             addSetArmPosCommand();
             addGetEntitiesCommand();
+            addGetStatsCommand();
             performGameUpdateRequest();
         }
     }
@@ -804,6 +818,7 @@ function timerEvent() {
         tempEntity.draw();
         index += 1;
     }
+    document.getElementById("score").innerHTML = localPlayer.score;
 }
 
 function initializeGame() {
