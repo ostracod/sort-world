@@ -28,11 +28,11 @@ var gameUpdateSocket;
 var gameUpdateStartTimestamp;
 var moduleList = [];
 var colorSet;
-var blockAmount = 30; // Should be populated from the server.
+var blockAmount = null;
 var blockMargin = 20;
-var blockWidth = (canvasWidth - blockMargin * 2) / blockAmount;
+var blockWidth;
 var blockPosY = 700;
-var blockList;
+var blockList = [];
 
 // Thanks to CatTail for this snippet of code.
 var encodeHtmlEntity = function(str) {
@@ -69,6 +69,9 @@ function handleGameUpdateRequest(data) {
             if (tempCommand.commandName == "setLocalPlayerInfo") {
                 performSetLocalPlayerInfoCommand(tempCommand);
             }
+            if (tempCommand.commandName == "setWorldInfo") {
+                performSetWorldInfoCommand(tempCommand);
+            }
             if (tempCommand.commandName == "addChatMessage") {
                 performAddChatMessageCommand(tempCommand);
             }
@@ -77,6 +80,9 @@ function handleGameUpdateRequest(data) {
             }
             if (tempCommand.commandName == "addOnlinePlayer") {
                 performAddOnlinePlayerCommand(tempCommand);
+            }
+            if (tempCommand.commandName == "setBlocks") {
+                performSetBlocksCommand(tempCommand);
             }
             index += 1;
         }
@@ -123,10 +129,21 @@ function addGetOnlinePlayersCommand() {
     });
 }
 
+function addGetBlocksCommand() {
+    gameUpdateCommandList.push({
+        commandName: "getBlocks"
+    });
+}
+
 function performSetLocalPlayerInfoCommand(command) {
     localPlayer.username = command.username;
     localPlayer.avatarColor = command.avatarColor;
     localPlayer.score = command.score;
+}
+
+function performSetWorldInfoCommand(command) {
+    blockAmount = command.blockAmount;
+    blockWidth = (canvasWidth - blockMargin * 2) / blockAmount;
 }
 
 function performAddChatMessageCommand(command) {
@@ -165,6 +182,16 @@ function performRemoveAllOnlinePlayersCommand(command) {
 function performAddOnlinePlayerCommand(command) {
     var tempTag = document.getElementById("onlinePlayersDiv");
     tempTag.innerHTML += "<strong>" + encodeHtmlEntity(command.username) + "</strong><br />";
+}
+
+function performSetBlocksCommand(command) {
+    blockList = [];
+    var index = 0;
+    while (index < command.blocks.length) {
+        var tempBlockInfo = command.blocks[index];
+        new Block(tempBlockInfo.id, tempBlockInfo.value);
+        index += 1;
+    }
 }
 
 function Entity(id) {
@@ -269,10 +296,12 @@ Player.prototype.draw = function() {
     context.fillText(this.username, Math.floor(tempBodyPos.x), Math.floor(tempBodyPos.y - 90));
 }
 
-function Block(value) {
+function Block(id, value) {
+    this.id = id;
     this.value = value;
     this.color = new Color(Math.floor(200 - this.value * 1.5), 64, Math.floor(50 + this.value * 1.5));
     this.height = 50 + value * 6;
+    blockList.push(this);
 }
 
 Block.prototype.draw = function(posX) {
@@ -598,8 +627,13 @@ function timerEvent() {
         if (gameUpdateRequestDelay <= 0) {
             addGetChatMessagesCommand();
             addGetOnlinePlayersCommand();
+            addGetBlocksCommand();
             performGameUpdateRequest();
         }
+    }
+    
+    if (blockAmount === null) {
+        return;
     }
     
     var index = entityList.length - 1;
@@ -654,11 +688,6 @@ function initializeGame() {
     
     window.onkeydown = keyDownEvent;
     window.onkeyup = keyUpEvent;
-    
-    blockList = [];
-    while (blockList.length < blockAmount) {
-        blockList.push(new Block(Math.floor(Math.random() * 100)));
-    }
     
     localPlayer = new Player(-1, null, null, null);
     addStartPlayingCommand();

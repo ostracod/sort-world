@@ -7,6 +7,7 @@ function GameUtils() {
     this.maximumPlayerCount = 15;
     this.persistDelay = 60 * this.framesPerSecond;
     this.isPersistingEverything = false;
+    this.blockAmount = 30;
     var mode = app.get("env");
     this.isInDevelopmentMode = (mode == "development");
 }
@@ -22,8 +23,12 @@ var chatMessageList = tempResource.chatMessageList;
 var entityList = require("models/entity").entityList;
 var Player = require("models/player").Player;
 
-var classUtils = require("utils/class.js");
-var accountUtils = require("utils/account.js");
+var tempResource = require("models/block");
+var Block = tempResource.Block;
+var blockList = tempResource.blockList;
+
+var classUtils = require("utils/class");
+var accountUtils = require("utils/account");
 
 GameUtils.prototype.getPlayerByUsername = function(username) {
     var index = 0;
@@ -102,6 +107,9 @@ GameUtils.prototype.performUpdate = function(username, commandList, done) {
             if (tempCommand.commandName == "getOnlinePlayers") {
                 performGetOnlinePlayersCommand(tempCommand, tempPlayer, tempCommandList);
             }
+            if (tempCommand.commandName == "getBlocks") {
+                performGetBlocksCommand(tempCommand, tempPlayer, tempCommandList);
+            }
         }
     }
     tempPlayer = gameUtils.getPlayerByUsername(username);
@@ -136,6 +144,13 @@ function addSetLocalPlayerInfoCommand(account, player, commandList) {
     });
 }
 
+function addSetWorldInfoCommand(commandList) {
+    commandList.push({
+        commandName: "setWorldInfo",
+        blockAmount: gameUtils.blockAmount
+    });
+}
+
 function addAddChatMessageCommand(chatMessage, commandList) {
     commandList.push({
         commandName: "addChatMessage",
@@ -157,6 +172,19 @@ function addAddOnlinePlayerCommand(username, commandList) {
     });
 }
 
+function addSetBlocksCommand(commandList) {
+    var tempBlockInfoList = [];
+    var index = 0;
+    while (index < blockList.length) {
+        tempBlockInfoList.push(blockList[index].getClientInfo());
+        index += 1;
+    }
+    commandList.push({
+        commandName: "setBlocks",
+        blocks: tempBlockInfoList
+    });
+}
+
 function performStartPlayingCommand(command, player, commandList, done, errorHandler) {
     accountUtils.acquireLock(function() {
         accountUtils.getAccountByUsername(player.username, function(error, result) {
@@ -166,6 +194,7 @@ function performStartPlayingCommand(command, player, commandList, done, errorHan
                 return;
             }
             addSetLocalPlayerInfoCommand(result, player, commandList);
+            addSetWorldInfoCommand(commandList);
             done();
         });
     });
@@ -201,6 +230,10 @@ function performGetOnlinePlayersCommand(command, player, commandList) {
         }
         index += 1;
     }
+}
+
+function performGetBlocksCommand(command, player, commandList) {
+    addSetBlocksCommand(commandList);
 }
 
 GameUtils.prototype.persistEverything = function(done) {
@@ -250,6 +283,13 @@ GameUtils.prototype.stopGame = function(done) {
     this.persistEverything(done);
 }
 
+GameUtils.prototype.generateBlocks = function() {
+    blockList.length = 0;
+    while (blockList.length < this.blockAmount) {
+        new Block(Math.floor(Math.random() * 100));
+    }
+}
+
 GameUtils.prototype.gameTimerEvent = function() {
     if (this.hasStopped || this.isPersistingEverything) {
         return;
@@ -269,6 +309,8 @@ GameUtils.prototype.gameTimerEvent = function() {
         });
     }
 }
+
+gameUtils.generateBlocks();
 
 setInterval(function() {
     gameUtils.gameTimerEvent();
