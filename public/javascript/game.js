@@ -262,14 +262,17 @@ Player.prototype.draw = function() {
     context.moveTo(tempBodyPos.x - 20, tempBodyPos.y + 14);
     context.bezierCurveTo(tempBodyPos.x - 16, tempBodyPos.y + 34, tempBodyPos.x + 16, tempBodyPos.y + 34, tempBodyPos.x + 20, tempBodyPos.y + 14);
     context.stroke();
-    
-    //drawCenteredText(tempPos, this.username);
+    context.font = "bold 30px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = "#000000";
+    context.fillText(this.username, Math.floor(tempBodyPos.x), Math.floor(tempBodyPos.y - 90));
 }
 
 function Block(value) {
     this.value = value;
-    this.color = new Color(178 - this.value, 64, 78 + this.value);
-    this.height = 200 + value * 4;
+    this.color = new Color(Math.floor(200 - this.value * 1.5), 64, Math.floor(50 + this.value * 1.5));
+    this.height = 50 + value * 6;
 }
 
 Block.prototype.draw = function(posX) {
@@ -279,6 +282,11 @@ Block.prototype.draw = function(posX) {
     context.fillRect(tempPosX - Math.floor(blockWidth / 2 + 3), tempPosY - this.height - 6, blockWidth + 6, this.height + 12);
     context.fillStyle = this.color.toString();
     context.fillRect(tempPosX - Math.floor(blockWidth / 2 - 3), tempPosY - this.height, blockWidth - 6, this.height);
+    context.font = "bold 30px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = "#FFFFFF";
+    context.fillText(this.value, Math.floor(tempPosX), Math.floor(tempPosY) - 20);
 }
 
 function Color(r, g, b) {
@@ -445,14 +453,6 @@ function getModuleByName(name) {
         index += 1;
     }
     return null;
-}
-
-function drawCenteredText(pos, text) {
-    context.font = "bold 30px Arial";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.fillStyle = "#000000";
-    context.fillText(text, Math.floor(pos.x), Math.floor(pos.y));
 }
 
 function showOrHideModuleByName(name) {
