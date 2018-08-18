@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <script src="javascript/global.js"></script>
+        <link type="text/css" rel="stylesheet" media="all" href="stylesheets/global.css" />
+    </head>
+    <body>
+        <div id="content">
+            <h2>SORTWORLD</h2>
+            <p>
+                <a href="{{url}}">{{urlLabel}}</a>
+            </p>
+            <h2>LEADERBOARD</h2>
+            <table cellpadding="10">
+                {{#accountList}}
+                <tr>
+                    <td>#{{ordinalNumber}}</td>
+                    <td><strong>{{username}}</strong></td>
+                    <td>{{score}} Points</td>
+                </tr>
+                {{/accountList}}
+            </table>
+            <p>
+                <a href="{{url}}">{{urlLabel}}</a>
+            </p>
+        </div>
+    </body>
+</html>
+
+

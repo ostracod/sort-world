@@ -115,9 +115,30 @@ router.post("/createAccountAction", function(req, res, next) {
 
 router.get("/menu", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
     tempUsername = req.session.username;
-    res.render("menu.html", {
-        username: tempUsername
-    });
+    function renderPage() {
+        res.render("menu.html", {
+            username: tempUsername,
+            score: tempScore
+        });
+    }
+    var tempPlayer = gameUtils.getPlayerByUsername(tempUsername);
+    var tempScore;
+    if (tempPlayer === null) {
+        accountUtils.acquireLock(function() {
+            accountUtils.getAccountByUsername(tempUsername, function(error, result) {
+                accountUtils.releaseLock();
+                if (error) {
+                    pageUtils.reportDatabaseErrorWithPage(error, req, res);
+                    return;
+                }
+                tempScore = result.score;
+                renderPage();
+            });
+        });
+    } else {
+        tempScore = tempPlayer.score;
+        renderPage();
+    }
 });
 
 router.get("/game", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
@@ -156,6 +177,30 @@ router.ws("/gameUpdate", checkAuthentication(SOCKET_ERROR_OUTPUT), function(ws, 
             tryToSendResponse();
         });
     }
+});
+
+router.get("/leaderboard", function(req, res, next) {
+    accountUtils.acquireLock(function() {
+        accountUtils.getLeaderboardAccounts(20, function(error, accountList) {
+            accountUtils.releaseLock();
+            if (error) {
+                pageUtils.reportDatabaseErrorWithPage(error, req, res);
+                return;
+            }
+            var index = 0;
+            while (index < accountList.length) {
+                var tempAccount = accountList[index];
+                tempAccount.ordinalNumber = index + 1;
+                index += 1;
+            }
+            var tempUrl = pageUtils.generateReturnUrl(req);
+            res.render("leaderboard.html", {
+                accountList: accountList,
+                url: tempUrl.url,
+                urlLabel: tempUrl.urlLabel
+            });
+        });
+    });
 });
 
 module.exports = router;
