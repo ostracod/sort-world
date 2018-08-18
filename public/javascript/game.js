@@ -3,7 +3,7 @@ var canvas;
 var context;
 var canvasWidth = 1600;
 var canvasHeight = 1000;
-var framesPerSecond = 16;
+var framesPerSecond = 25;
 var canvasIsFocused = true;
 var shiftKeyIsHeld = false;
 var chatInputIsFocused = false;
@@ -147,8 +147,8 @@ function addGetBlocksCommand() {
 function addSetArmPosCommand() {
     gameUpdateCommandList.push({
         commandName: "setArmPos",
-        armPos1: localPlayer.armPos1,
-        armPos2: localPlayer.armPos2
+        armPos1: localPlayer.arm1.pos,
+        armPos2: localPlayer.arm2.pos
     });
 }
 
@@ -228,7 +228,7 @@ function performSetBlocksCommand(command) {
 }
 
 function performSetEntitiesCommand(command) {
-    entityList = [localPlayer];
+    entityList = [];
     var index = 0;
     while (index < command.entities.length) {
         var tempEntityInfo = command.entities[index];
@@ -239,11 +239,12 @@ function performSetEntitiesCommand(command) {
                 tempEntityInfo.avatarColor,
                 tempEntityInfo.score
             );
-            tempPlayer.armPos1 = tempEntityInfo.armPos1;
-            tempPlayer.armPos2 = tempEntityInfo.armPos2;
+            tempPlayer.arm1.pos = tempEntityInfo.armPos1;
+            tempPlayer.arm2.pos = tempEntityInfo.armPos2;
         }
         index += 1;
     }
+    entityList.push(localPlayer);
 }
 
 function Entity(id) {
@@ -275,13 +276,56 @@ function convertBlockPosToScreenPos(blockPos) {
     return Math.floor(blockMargin + blockPos * (canvasWidth - blockMargin * 2) / blockAmount + blockWidth / 2);
 }
 
+function PlayerArm(pos) {
+    this.pos = pos;
+    this.moveDirection = 0;
+    this.moveDelay = 0;
+}
+
+PlayerArm.prototype.move = function(direction) {
+    if (blockAmount === null) {
+        return;
+    }
+    if (direction < 0 && this.pos > 0) {
+        this.pos -= 1;
+    }
+    if (direction > 0 && this.pos < blockAmount - 1) {
+        this.pos += 1;
+    }
+}
+
+PlayerArm.prototype.startMoving = function(direction) {
+    if (Math.sign(this.moveDirection) == Math.sign(direction)) {
+        return;
+    }
+    this.move(direction);
+    this.moveDirection = direction;
+    this.moveDelay = 0;
+}
+
+PlayerArm.prototype.stopMoving = function(direction) {
+    if (Math.sign(this.moveDirection) != Math.sign(direction)) {
+        return;
+    }
+    this.moveDirection = 0;
+}
+
+PlayerArm.prototype.tick = function() {
+    if (this.moveDirection != 0) {
+        this.moveDelay += 1;
+        if (this.moveDelay > 10) {
+            this.move(this.moveDirection);
+        }
+    }
+}
+
 function Player(id, username, avatarColor, score) {
     Entity.call(this, id);
     this.username = username;
     this.avatarColor = avatarColor;
     this.score = score;
-    this.armPos1 = 0;
-    this.armPos2 = 5;
+    this.arm1 = new PlayerArm(0);
+    this.arm2 = new PlayerArm(5);
 }
 setParentClass(Player, Entity);
 
@@ -300,14 +344,20 @@ Player.prototype.strokeArm = function(bodyPos, armPos, radiusOffset) {
     }
 }
 
+Player.prototype.tick = function() {
+    Entity.prototype.tick.call(this);
+    this.arm1.tick();
+    this.arm2.tick();
+}
+
 Player.prototype.draw = function() {
     if (this.username === null) {
         return;
     }
     Entity.prototype.draw.call(this);
     var tempColor = colorSet[this.avatarColor];
-    var tempArmPos1 = new Pos(convertBlockPosToScreenPos(this.armPos1), blockPosY);
-    var tempArmPos2 = new Pos(convertBlockPosToScreenPos(this.armPos2), blockPosY);
+    var tempArmPos1 = new Pos(convertBlockPosToScreenPos(this.arm1.pos), blockPosY);
+    var tempArmPos2 = new Pos(convertBlockPosToScreenPos(this.arm2.pos), blockPosY);
     var tempDelta = Math.abs(tempArmPos1.x - tempArmPos2.x);
     var tempOffsetY = 230 - tempDelta / 14;
     var tempBodyPos = new Pos(Math.floor((tempArmPos1.x + tempArmPos2.x) / 2), blockPosY + tempOffsetY);
@@ -359,10 +409,13 @@ function swapBlocksByIndexAndId(index1, id1, index2, id2) {
 }
 
 Player.prototype.swapBlocks = function() {
-    var tempId1 = blockList[this.armPos1].id;
-    var tempId2 = blockList[this.armPos2].id;
-    swapBlocksByIndexAndId(this.armPos1, tempId1, this.armPos2, tempId2);
-    addSwapBlocksCommand(this.armPos1, tempId1, this.armPos2, tempId2);
+    if (blockAmount === null) {
+        return;
+    }
+    var tempId1 = blockList[this.arm1.pos].id;
+    var tempId2 = blockList[this.arm2.pos].id;
+    swapBlocksByIndexAndId(this.arm1.pos, tempId1, this.arm2.pos, tempId2);
+    addSwapBlocksCommand(this.arm1.pos, tempId1, this.arm2.pos, tempId2);
 }
 
 function Block(id, value) {
@@ -618,24 +671,16 @@ function keyDownEvent(event) {
             overlayChatInputIsFocused = true;
         }
         if (keyCode == 65) {
-            if (localPlayer.armPos1 > 0) {
-                localPlayer.armPos1 -= 1;
-            }
+            localPlayer.arm1.startMoving(-1);
         }
         if (keyCode == 68) {
-            if (localPlayer.armPos1 < blockAmount - 1) {
-                localPlayer.armPos1 += 1;
-            }
+            localPlayer.arm1.startMoving(1);
         }
         if (keyCode == 74) {
-            if (localPlayer.armPos2 > 0) {
-                localPlayer.armPos2 -= 1;
-            }
+            localPlayer.arm2.startMoving(-1);
         }
         if (keyCode == 76) {
-            if (localPlayer.armPos2 < blockAmount - 1) {
-                localPlayer.armPos2 += 1;
-            }
+            localPlayer.arm2.startMoving(1);
         }
         if (keyCode == 32) {
             localPlayer.swapBlocks();
@@ -650,8 +695,18 @@ function keyUpEvent(event) {
     if (keyCode == 16) {
         shiftKeyIsHeld = false;
     }
-    // TODO: Process key releases.
-    
+    if (keyCode == 65) {
+        localPlayer.arm1.stopMoving(-1);
+    }
+    if (keyCode == 68) {
+        localPlayer.arm1.stopMoving(1);
+    }
+    if (keyCode == 74) {
+        localPlayer.arm2.stopMoving(-1);
+    }
+    if (keyCode == 76) {
+        localPlayer.arm2.stopMoving(1);
+    }
 }
 
 function timerEvent() {

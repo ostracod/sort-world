@@ -2,7 +2,7 @@
 var app = require("sortWorld");
 
 function GameUtils() {
-    this.framesPerSecond = 16;
+    this.framesPerSecond = 25;
     this.hasStopped = false;
     this.maximumPlayerCount = 15;
     this.persistDelay = 60 * this.framesPerSecond;
