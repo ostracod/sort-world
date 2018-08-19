@@ -444,8 +444,8 @@ Player.prototype.swapBlocks = function() {
 function Block(id, value) {
     this.id = id;
     this.value = value;
-    this.color = new Color(Math.floor(200 - this.value * 1.5), 64, Math.floor(50 + this.value * 1.5));
-    this.height = 50 + value * 6;
+    this.color = new Color(Math.floor(200 - this.value * 3), 64, Math.floor(50 + this.value * 3));
+    this.height = 50 + value * 12;
     blockList.push(this);
 }
 

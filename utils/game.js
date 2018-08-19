@@ -374,7 +374,7 @@ GameUtils.prototype.assignCorrectBlockPos = function(sortedBlockList, block) {
 GameUtils.prototype.generateBlocks = function() {
     blockList.length = 0;
     while (blockList.length < this.blockAmount) {
-        new Block(Math.floor(Math.random() * 100));
+        new Block(Math.floor(Math.random() * 50));
     }
     var tempSortedBlockList = blockList.slice();
     tempSortedBlockList.sort(function(block1, block2) {
