@@ -182,10 +182,11 @@ function addRemoveAllOnlinePlayersCommand(commandList) {
     });
 }
 
-function addAddOnlinePlayerCommand(username, commandList) {
+function addAddOnlinePlayerCommand(player, commandList) {
     commandList.push({
         commandName: "addOnlinePlayer",
-        username: username
+        username: player.username,
+        score: player.score
     });
 }
 
@@ -266,7 +267,7 @@ function performGetOnlinePlayersCommand(command, player, commandList) {
     while (index < entityList.length) {
         var tempEntity = entityList[index];
         if (classUtils.isInstanceOf(tempEntity, Player)) {
-            addAddOnlinePlayerCommand(tempEntity.username, commandList);
+            addAddOnlinePlayerCommand(tempEntity, commandList);
         }
         index += 1;
     }

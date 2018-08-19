@@ -233,7 +233,7 @@ function performRemoveAllOnlinePlayersCommand(command) {
 
 function performAddOnlinePlayerCommand(command) {
     var tempTag = document.getElementById("onlinePlayersDiv");
-    tempTag.innerHTML += "<strong>" + encodeHtmlEntity(command.username) + "</strong><br />";
+    tempTag.innerHTML += "<strong>" + encodeHtmlEntity(command.username) + " (" + command.score + ")</strong><br />";
 }
 
 function performSetBlocksCommand(command) {
