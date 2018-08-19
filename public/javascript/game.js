@@ -34,6 +34,7 @@ var blockMargin = 20;
 var blockWidth;
 var blockPosY = 700;
 var blockList = [];
+var shouldDrawGridLines = true;
 
 // Thanks to CatTail for this snippet of code.
 var encodeHtmlEntity = function(str) {
@@ -669,6 +670,24 @@ function updateAvatarColorButtons() {
     }
 }
 
+function drawGridLines() {
+    var tempSpacing = 100;
+    context.fillStyle = "#CCCCCC";
+    var tempPosY = blockPosY - 6;
+    while (tempPosY > 0) {
+        context.fillRect(0, tempPosY - tempSpacing, canvasWidth, tempSpacing);
+        tempPosY -= tempSpacing * 2;
+    }
+    context.fillStyle = "#888888";
+    context.fillRect(convertBlockPosToScreenPos(localPlayer.arm1.pos) - 3, 0, 6, blockPosY);
+    context.fillRect(convertBlockPosToScreenPos(localPlayer.arm2.pos) - 3, 0, 6, blockPosY);
+}
+
+function updateShouldDrawGridLines() {
+    var tempTag = document.getElementById("shouldDrawGridLines");
+    shouldDrawGridLines = !!tempTag.checked;
+}
+
 function keyDownEvent(event) {
     lastActivityTime = 0;
     var keyCode = event.which;
@@ -806,6 +825,9 @@ function timerEvent() {
     }
     
     clearCanvas();
+    if (shouldDrawGridLines) {
+        drawGridLines();
+    }
     var index = 0;
     while (index < blockList.length) {
         var tempBlock = blockList[index];
