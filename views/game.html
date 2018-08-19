@@ -31,7 +31,7 @@
                 <p>
                     <input type="checkbox" checked="checked" id="shouldDrawGridLines" onchange="updateShouldDrawGridLines();"/> <span style="vertical-align: -2px;">Show grid lines</span>
                 </p>
-                <p>
+                <p {{^debugMode}}style="display: none;"{{/debugMode}}>
                     Ping time: <span id="pingTime"></span> ms
                 </p>
                 <p>

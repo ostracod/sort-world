@@ -800,7 +800,14 @@ function timerEvent() {
         window.location = "menu";
     }
     
-    if (!isRequestingGameUpdate) {
+    if (isRequestingGameUpdate) {
+        var tempDelay = (Date.now() / 1000) - gameUpdateStartTimestamp;
+        if (tempDelay > 15) {
+            alert("Lost connection to the server.");
+            hasStopped = true;
+            window.location = "menu";
+        }
+    } else {
         gameUpdateRequestDelay -= 1;
         if (gameUpdateRequestDelay <= 0) {
             addGetChatMessagesCommand();
@@ -841,6 +848,7 @@ function timerEvent() {
         index += 1;
     }
     document.getElementById("score").innerHTML = localPlayer.score;
+    
 }
 
 function initializeGame() {

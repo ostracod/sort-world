@@ -4,7 +4,10 @@ var router = express.Router();
 var pageUtils = require("utils/page.js");
 var accountUtils = require("utils/account.js");
 var gameUtils = require("utils/game.js");
-var app = require("sortWorld");
+
+var tempResource = require("sortWorld");
+var app = tempResource.app;
+var mode = tempResource.mode;
 
 var checkAuthentication = pageUtils.checkAuthentication;
 var serveMessagePage = pageUtils.serveMessagePage;
@@ -192,7 +195,7 @@ router.get("/menu", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, n
 });
 
 router.get("/game", checkAuthentication(PAGE_ERROR_OUTPUT), function(req, res, next) {
-    res.render("game.html", {});
+    res.render("game.html", {debugMode: (mode == "development")});
 });
 
 router.ws("/gameUpdate", checkAuthentication(SOCKET_ERROR_OUTPUT), function(ws, req, next) {

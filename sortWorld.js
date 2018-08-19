@@ -43,7 +43,10 @@ if (mode == "development") {
 }
 expressWs(app, server);
 
-module.exports = app;
+module.exports = {
+    app: app,
+    mode: mode
+}
 
 var indexRoute = require("./routes/index");
 

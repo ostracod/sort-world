@@ -1,7 +1,7 @@
 
-var app = require("sortWorld");
-
-var mode = app.get("env");
+var tempResource = require("sortWorld");
+var app = tempResource.app;
+var mode = tempResource.mode;
 
 function PageUtils() {
 

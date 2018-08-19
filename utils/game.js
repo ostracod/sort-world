@@ -1,5 +1,7 @@
 
-var app = require("sortWorld");
+var tempResource = require("sortWorld");
+var app = tempResource.app;
+var mode = tempResource.mode;
 
 function GameUtils() {
     this.framesPerSecond = 25;
@@ -9,7 +11,6 @@ function GameUtils() {
     this.isPersistingEverything = false;
     this.blockAmount = 30;
     this.isFinishingRound = false;
-    var mode = app.get("env");
     this.isInDevelopmentMode = (mode == "development");
 }
 
