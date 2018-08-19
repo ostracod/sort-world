@@ -445,7 +445,7 @@ function Block(id, value) {
     this.id = id;
     this.value = value;
     this.color = new Color(Math.floor(200 - this.value * 3), 64, Math.floor(50 + this.value * 3));
-    this.height = 50 + value * 12;
+    this.height = 48 + value * 12;
     blockList.push(this);
 }
 
@@ -671,11 +671,14 @@ function updateAvatarColorButtons() {
 }
 
 function drawGridLines() {
-    var tempSpacing = 100;
-    context.fillStyle = "#CCCCCC";
+    var tempSpacing = 162;
     var tempPosY = blockPosY - 6;
     while (tempPosY > 0) {
+        context.fillStyle = "#CCCCCC";
         context.fillRect(0, tempPosY - tempSpacing, canvasWidth, tempSpacing);
+        context.fillRect(0, tempPosY - tempSpacing * 3 / 2 - 3, canvasWidth, 6);
+        context.fillStyle = "#FFFFFF";
+        context.fillRect(0, tempPosY - tempSpacing / 2 - 3, canvasWidth, 6);
         tempPosY -= tempSpacing * 2;
     }
     context.fillStyle = "#888888";
