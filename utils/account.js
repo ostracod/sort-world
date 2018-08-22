@@ -3,6 +3,7 @@ var fs = require("fs");
 var bcrypt = require("bcrypt");
 var mysql = require("mysql");
 
+var databaseConfig = JSON.parse(fs.readFileSync("databaseConfig.json", "utf8"));
 var accountsDatabaseLock = false;
 var connection;
 
@@ -57,11 +58,24 @@ AccountUtils.prototype.acquireLock = function(done) {
         }, 2);
     } else {
         accountsDatabaseLock = true;
-        done();
+        connection = mysql.createConnection({
+            host: databaseConfig.host,
+            user: databaseConfig.username,
+            password: databaseConfig.password,
+            database: databaseConfig.databaseName
+        });
+        connection.connect(function(error) {
+            if (error) {
+                console.log(accountUtils.convertSqlErrorToText(error));
+                return;
+            }
+            done();
+        });
     }
 }
 
 AccountUtils.prototype.releaseLock = function() {
+    connection.destroy();
     accountsDatabaseLock = false;
 }
 
@@ -167,24 +181,5 @@ AccountUtils.prototype.getLeaderboardAccounts = function(amount, done) {
         }
     );
 }
-
-var databaseConfig = JSON.parse(fs.readFileSync("databaseConfig.json", "utf8"));
-
-console.log("Connecting to MySQL...");
-
-connection = mysql.createConnection({
-    host: databaseConfig.host,
-    user: databaseConfig.username,
-    password: databaseConfig.password,
-    database: databaseConfig.databaseName
-});
-
-connection.connect(function(error) {
-    if (error) {
-        console.log(accountUtils.convertSqlErrorToText(error));
-        return;
-    }
-    console.log("Connected to MySQL.");
-});
 
 
