@@ -3,3 +3,8 @@
 node_modules
 sessionSecret.txt
 databaseConfig.json
+ssl.crt
+ssl.key
+serverMessages.txt
+
+
