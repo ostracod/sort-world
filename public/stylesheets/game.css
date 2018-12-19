@@ -1,0 +1,10 @@
+
+.avatarColorButton {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border: 3px #FFFFFF solid;
+}
+
+

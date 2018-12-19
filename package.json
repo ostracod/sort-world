@@ -6,21 +6,6 @@
     "start": "node sortWorld.js"
   },
   "dependencies": {
-    "bcrypt": "^3.0.0",
-    "body-parser": "^1.18.3",
-    "confirm-cli": "^0.4.0",
-    "cookie-parser": "~1.4.3",
-    "debug": "~2.6.3",
-    "express": "^4.16.3",
-    "express-session": "^1.15.2",
-    "express-ws": "^4.0.0",
-    "jade": "~1.11.0",
-    "minimist": "^1.2.0",
-    "morgan": "^1.9.0",
-    "mustache-express": "^1.2.4",
-    "mysql": "^2.16.0",
-    "npm": "^6.3.0",
-    "rootpath": "^0.1.2",
-    "serve-favicon": "~2.4.2"
+    "ostracod-multiplayer": "github:ostracod/ostracod-multiplayer"
   }
 }
