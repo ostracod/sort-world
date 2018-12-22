@@ -13,7 +13,7 @@ var gameDelegate = new GameDelegate();
 module.exports = gameDelegate;
 
 var entityList = require("models/entity").entityList;
-var PlayerEntity = require("models/player").PlayerEntity;
+var PlayerEntity = require("models/playerEntity").PlayerEntity;
 
 var tempResource = require("models/block");
 var Block = tempResource.Block;
@@ -39,7 +39,8 @@ GameDelegate.prototype.getPlayerEntityByPlayer = function(player) {
     return this.getPlayerEntityByUsername(player.username);
 }
 
-gameUtils.addCommandListener("getAvatarColor", true, performGetBlocksCommand);
+gameUtils.addCommandListener("getWorldInfo", true, performGetWorldInfoCommand);
+gameUtils.addCommandListener("getAvatarColor", true, performGetAvatarColorCommand);
 gameUtils.addCommandListener("getBlocks", true, performGetBlocksCommand);
 gameUtils.addCommandListener("setArmPos", true, performSetArmPosCommand);
 gameUtils.addCommandListener("getEntities", true, performGetEntitiesCommand);
@@ -102,6 +103,10 @@ function performGetWorldInfoCommand(command, player, commandList) {
     addSetWorldInfoCommand(commandList);
 }
 
+function performGetAvatarColorCommand(command, player, commandList) {
+    addSetAvatarColorCommand(player.extraFields.avatarColor, commandList);
+}
+
 function performGetBlocksCommand(command, player, commandList) {
     addSetBlocksCommand(commandList);
 }
@@ -131,8 +136,7 @@ function performSwapBlocksCommand(command, player, commandList) {
 }
 
 function performSetAvatarColorCommand(command, player, commandList) {
-    var tempPlayerEntity = gameDelegate.getPlayerEntityByPlayer(player);
-    player.avatarColor = command.avatarColor;
+    player.extraFields.avatarColor = command.avatarColor;
 }
 
 GameDelegate.prototype.assignCorrectBlockPos = function(sortedBlockList, block) {
@@ -259,7 +263,7 @@ GameDelegate.prototype.finishRound = function() {
             var tempPlayerEntity = tempEntity;
             var tempPointCount = tempPlayerEntity.pendingPoints;
             var tempPlayer = gameUtils.getPlayerByUsername(tempPlayerEntity.username);
-            announceMessageInChat(tempPlayer.username + " gained " + tempPointCount + " " + pluralize("point", tempPointCount) + ".");
+            gameUtils.announceMessageInChat(tempPlayer.username + " gained " + tempPointCount + " " + pluralize("point", tempPointCount) + ".");
             tempPlayer.score += tempPointCount;
             tempPlayerEntity.pendingPoints = 0;
         }
@@ -272,18 +276,18 @@ GameDelegate.prototype.finishRound = function() {
 }
 
 GameDelegate.prototype.playerEnterEvent = function(player) {
-    // TODO: Implement.
-    
+    if (player.extraFields.avatarColor === null) {
+        player.extraFields.avatarColor = 0;
+    }
+    new PlayerEntity(player.username);
 }
 
 GameDelegate.prototype.playerLeaveEvent = function(player) {
-    // TODO: Implement.
-    
+    var tempPlayerEntity = this.getPlayerEntityByPlayer(player);
+    tempPlayerEntity.remove();
 }
 
 GameDelegate.prototype.persistEvent = function(done) {
-    // TODO: Implement.
-    
     done();
 }
 

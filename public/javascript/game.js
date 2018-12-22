@@ -16,6 +16,12 @@ function addGetWorldInfoCommand() {
     });
 }
 
+function addGetAvatarColorCommand() {
+    gameUpdateCommandList.push({
+        commandName: "getAvatarColor"
+    });
+}
+
 function addGetBlocksCommand() {
     gameUpdateCommandList.push({
         commandName: "getBlocks"

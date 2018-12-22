@@ -6,10 +6,9 @@ var tempResource = require("models/entity");
 var Entity = tempResource.Entity;
 var entityList = tempResource.entityList;
 
-function PlayerEntity(account) {
+function PlayerEntity(username) {
     Entity.call(this);
-    this.username = account.username;
-    this.avatarColor = account.avatarColor;
+    this.username = username;
     this.armPos1 = 0;
     this.armPos2 = 0;
     this.pendingPoints = 0;
@@ -26,7 +25,7 @@ PlayerEntity.prototype.getClientInfo = function() {
         className: "Player",
         id: this.id,
         username: tempPlayer.username,
-        avatarColor: this.avatarColor,
+        avatarColor: tempPlayer.extraFields.avatarColor,
         score: tempPlayer.score,
         armPos1: this.armPos1,
         armPos2: this.armPos2
