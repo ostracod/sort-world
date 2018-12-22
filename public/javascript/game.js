@@ -107,7 +107,7 @@ addCommandListener("setEntities", function(command) {
 });
 
 addCommandListener("setStats", function(command) {
-        localPlayer.score = command.score;
+    localPlayer.score = command.score;
 });
 
 addCommandRepeater("swapBlocks", function(command) {
